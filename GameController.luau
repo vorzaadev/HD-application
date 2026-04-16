@@ -97,7 +97,7 @@ end
 function GameController:KnitStart()
 	--// call ToolService to get the full list of tool costs
 	--// "andThen()" means that the function will indefinitely yield until the
-	--// promise resolves on the server and it is returned
+	--// promise resolves/rejects on the server and it is returned
 	--// it works kinda like the :Once() RbxScriptSignal
 	self.ToolService:GetToolCosts():andThen(function(costs)
 		--// Set the table we receive from the server on the client
@@ -134,10 +134,10 @@ function GameController:LoadLevel(levelNumber)
 	self.SelectedTool:set(nil)
 
 	--// We make a new GetLevelData request to LevelService
-	--// Because the level data itself is specific to the player and what they did already
-	--// And we always want to ge the latest version of what they have
-	--// We can't cache the 1000+ levels if the player progressed a ton
-	return self.LevelService
+	--// Because this can also be called on the client when they want to progress
+	--// And we can't cache the 1000+ levels if the player progressed a ton
+	return self
+		.LevelService
 		:GetLevelData(levelNumber)
 		--// Another :andThen() to make our script yield until we get an answer
 		:andThen(function(data)
@@ -181,22 +181,27 @@ function GameController:LoadLevel(levelNumber)
 		--// :catch() is like :andThen() but it's meant to handle errors only
 		--// so if our Promise returned a reject() instead of a resolve()
 		--// this function will be called instead of :andThen()
-		:catch(function(err)
-			--// the passed "err" argument is an entirely different object type
-			--// so we need to use tostring() in case it didn't return a raw string
-			warn("[GameController] Error loading level:", tostring(err))
-			--// Set the guard back again so we can load something else
-			self.IsLoading:set(false)
-		end)
+		:catch(
+			function(err)
+				--// the passed "err" argument is an entirely different object type
+				--// so we need to use tostring() in case it didn't return a raw string
+				warn("[GameController] Error loading level:", tostring(err))
+				--// Set the guard back again so we can load something else
+				self.IsLoading:set(false)
+			end
+		)
 end
 
 --// Submit a word to the server and get validation on it
 --// Again, the answers aren't revealed for exploit protection
 --// so we need to do this for every word
 function GameController:SubmitWord(word)
-	return self.LevelService
-	--// "word" in this case is just a string that is all the player's selected letters concatenated
-		:SubmitWord(word)
+	return self
+		.LevelService
+		--// "word" in this case is just a string that is all the player's selected letters concatenated
+		:SubmitWord(
+			word
+		)
 		:andThen(function(result)
 			print("[GameController] Word submission result:", result.Status)
 
@@ -355,7 +360,8 @@ end
 function GameController:UseHint()
 	--// The ToolService call does the logic for us on the server
 	--// because again the client doesn't have the full board
-	return self.ToolService
+	return self
+		.ToolService
 		:UseHint()
 		:andThen(function(result)
 			if result.Success and result.Cell then
@@ -383,7 +389,8 @@ end
 --// Use Barrage tool to reveal multiple random cells
 function GameController:UseBarrage()
 	--// The logic is done on the server
-	return self.ToolService
+	return self
+		.ToolService
 		:UseBarrage()
 		:andThen(function(result)
 			if result.Success and result.Cells then
@@ -411,7 +418,7 @@ function GameController:UseBarrage()
 		end)
 		--// Same logic for catching server errors
 		:catch(function(err)
-			warn("[GameController] Error using Barrage:", err)
+			warn("[GameController] Error using Barrage:", tostring(err))
 		end)
 end
 
@@ -463,17 +470,17 @@ function GameController:LoadBonusWords()
 	return self.LevelService
 		:GetBonusWords()
 		:andThen(function(result)
-			--// If we have a valid result and a words list
-			--// Then we simply set all the necessary values as such
-			if result and result.Words then
-				self.BonusWords:set(result.Words)
-				self.BonusWordsCount:set(#result.Words)
-			end
-			return result
+		--// If we have a valid result and a words list
+		--// Then we simply set all the necessary values as such
+		if result and result.Words then
+			self.BonusWords:set(result.Words)
+			self.BonusWordsCount:set(#result.Words)
+		end
+		return result
 		end)
 		--// Catch server errors
 		:catch(function(err)
-			warn("[GameController] Error loading bonus words:", err)
+		warn("[GameController] Error loading bonus words:", tostring(err))
 		end)
 end
 
