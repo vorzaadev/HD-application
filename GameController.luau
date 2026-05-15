@@ -102,7 +102,8 @@ function GameController:KnitStart()
 	self.ToolService:GetToolCosts():andThen(function(costs)
 		--// Set the table we receive from the server on the client
 		--// :set() method updates the value without defining the entire thing again
-		--// for resource efficiency
+		--// for resource efficiency and so it can be properly used by
+		--// anything listening or things like :Computed() and :Spring()
 		self.ToolCosts:set(costs)
 		print("[GameController] Tool costs loaded:", costs)
 	end)
@@ -229,6 +230,9 @@ function GameController:SubmitWord(word)
 end
 
 --// Fill a single cell with a letter result for procedural animation
+--// We do this whole process of copying + only changing one cell
+--// So it gets picked up and properly animted by our OnyxUI component
+--// handling the data here
 function GameController:FillCell(x, y, letter)
 	--// Get our current grid as it is right now
 	local grid = Fusion.peek(self.Grid)
