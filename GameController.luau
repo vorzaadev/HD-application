@@ -11,6 +11,10 @@
 		- Provide state for UI components
 ]]
 
+--// P.S.: For the HD reviewer reading this- you can access the linked game's Cmdr by pressing RIGHT ALT.
+--// use clearLevel to reset your progress. There is only one level.
+--// Right now, the only accepted words are: APPLE, SUN, STAR
+
 --// Most of the logic is repeated so the first half has 90% of the logic explanation
 
 --// Require our dependencies
